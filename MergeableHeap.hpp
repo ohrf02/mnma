@@ -1,3 +1,9 @@
+
+#ifndef MERGEABLE_HEAP_H
+#define MERGEABLE_HEAP_H
+
+#include "misc.h"
+
 namespace MNMA
 {
 /**
@@ -58,4 +64,13 @@ public:
 private:
     const enum ListType type;
 };
+
+template <typename T>
+MergeableHeap<T>::MergeableHeap(enum ListType list_type) : type{list_type}
+{
+    ForceInteger<T>();
+}
+
 } // namespace MNMA
+
+#endif // MERGEABLE_HEAP_H
