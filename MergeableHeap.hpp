@@ -1,3 +1,5 @@
+namespace MNMA
+{
 /**
  * @brief A mergeable heap.
  *
@@ -16,9 +18,11 @@ public:
 
 public:
     /**
-     * @brief Construct a new empty Mergeable Heap object
+     * @brief Construct a new empty Mergeable Heap object.
+     *
+     * @param list_type The type of list to based the heap on.
      */
-    MergeableHeap(enum ListType);
+    MergeableHeap(enum ListType list_type);
 
     /**
      * @brief Instert a new value to the heap.
@@ -52,5 +56,6 @@ public:
     T UNION(const MergeableHeap<T> &other);
 
 private:
-    enum ListType type;
+    const enum ListType type;
 };
+} // namespace MNMA
