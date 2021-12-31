@@ -65,9 +65,9 @@ public:
      * @brief Union the two heaps.
      *
      * @param other The other heap to be merged
-     * @return T this merged heap if the union was successful, the given heap otherwise.
+     * @return bool true if the union was successful, false otherwise.
      */
-    // T Union(const MergeableHeap<T> &other);
+    bool Union(const MergeableHeap<T> &&other);
 
 private:
     /**
@@ -115,6 +115,24 @@ private:
      * @return List<T>* A pointer to the node before the node that contains the given value.
      */
     List<T>* GetOneBeforeNode(const T value);
+
+    /**
+     * @brief Merge the given sorted lists into the first list.
+     *
+     * @param to The list to merge into.
+     * @param from The list to merge.
+     * @return True if the merge was successful, false otherwise.
+     */
+    bool MergeSortedLists(List<T> *to, List<T> *from);
+
+    /**
+     * @brief Merge the given unsorted lists into the first list.
+     *
+     * @param to The list to merge into.
+     * @param from The list to merge.
+     * @return True if the merge was successful, false otherwise.
+     */
+    bool MergeUnSortedLists(List<T> *to, List<T> *from);
 
 public:
     List<T> *list;
@@ -327,6 +345,50 @@ T MergeableHeap<T>::ExctractMin()
     }
 
     return min;
+}
+
+template <typename T>
+bool MergeableHeap<T>::MergeSortedLists(List<T> *to, List<T> *from)
+{
+    return true;
+}
+
+template <typename T>
+bool MergeableHeap<T>::MergeUnSortedLists(List<T> *to, List<T> *from)
+{
+    // Find the last node of the list to merge into.
+    while(to->GetNext() != nullptr)
+    {
+        to = to->GetNext();
+    }
+
+    to->SetNext(from);
+
+    return true;
+}
+
+template <typename T>
+bool MergeableHeap<T>::Union(const MergeableHeap<T> &&other)
+{
+    switch (this->type)
+    {
+    case ListType::sorted:
+    {
+        other.list = nullptr;
+        break;
+    }
+    case ListType::unsorted:
+    case ListType::disjoints:
+    {
+        CHECK_RET(MergeUnSortedLists(this->list, other.list));
+        break;
+    }
+    default:
+        break;
+    }
+
+    other.list = nullptr;
+    return true;
 }
 } // namespace MNMA
 
