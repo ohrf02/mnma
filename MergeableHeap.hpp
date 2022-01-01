@@ -6,6 +6,7 @@
 #include "List.hpp"
 
 #include <iostream>
+#include <unordered_set>
 
 namespace MNMA
 {
@@ -51,7 +52,7 @@ public:
      *
      * @return T The minimum value of the heap.
      */
-    T Minimum();
+    T Minimum() const;
 
     /**
      * @brief Extract the minimum value from the heap and returns it.
@@ -91,21 +92,21 @@ private:
      * @param value The value to check.
      * @return true If the value exists in the heap's list, false otherwise.
      */
-    bool CheckIfIn(const T value);
+    bool CheckIfIn(const T value) const;
 
     /**
      * @brief Get the node with the minimum value of the heap's sorted list.
      *
      * @return T The node with the minimum value;
      */
-    T MinimumSorted();
+    T MinimumSorted() const;
 
     /**
      * @brief Get the node with the minimum value of the heap's unsorted list.
      *
      * @return T The node with the minimum value;
      */
-    T MinimumUnSorted();
+    T MinimumUnSorted() const;
 
     /**
      * @brief Get the One Before Node object.
@@ -113,15 +114,25 @@ private:
      * @param value The value to search by.
      * @return List<T>* A pointer to the node before the node that contains the given value.
      */
-    List<T>* GetOneBeforeNode(const T value);
+    List<T>* GetOneBeforeNode(const T value) const;
+
+    /**
+     * @brief Merge 2 given sorted list and return a pointer to the start of the merged list.
+     *
+     * @param head1 The first list to merge.
+     * @param head2 The second list to merge.
+     * @return List<T>* A pointer to the start of the merged list.
+     */
+    List<T>* Merge(List<T> *head1, List<T> *head2);
 
     /**
      * @brief Merge the given unsorted lists into the first list.
      *
      * @param to The list to merge into.
      * @param from The list to merge.
+     * @param remove_duplications Remove the duplicated values from the new list if this option is enabled.
      */
-    void MergeUnSortedLists(List<T> *to, List<T> *from);
+    void MergeUnSortedLists(List<T> *to, List<T> *from, bool remove_duplications = false);
 
 public:
     List<T> *list;
@@ -191,15 +202,16 @@ bool MergeableHeap<T>::InsertUnSorted(const T value)
 }
 
 template <typename T>
-bool MergeableHeap<T>::CheckIfIn(const T value)
+bool MergeableHeap<T>::CheckIfIn(const T value) const
 {
-    auto *l{this->list};
-    while (l != nullptr)
+    auto *current{this->list};
+    while (current != nullptr)
     {
-        if (l->GetValue() == value)
+        if (current->GetValue() == value)
         {
             return true;
         }
+        current = current->GetNext();
     }
 
     return false;
@@ -239,13 +251,13 @@ bool MergeableHeap<T>::Insert(const T value)
 }
 
 template <typename T>
-T MergeableHeap<T>::MinimumSorted()
+T MergeableHeap<T>::MinimumSorted() const
 {
     return this->list->GetValue();
 }
 
 template <typename T>
-T MergeableHeap<T>::MinimumUnSorted()
+T MergeableHeap<T>::MinimumUnSorted() const
 {
     auto *l{this->list};
     T min{this->list->GetValue()};
@@ -264,7 +276,7 @@ T MergeableHeap<T>::MinimumUnSorted()
 }
 
 template <typename T>
-T MergeableHeap<T>::Minimum()
+T MergeableHeap<T>::Minimum() const
 {
     // Return 0 as the min value of an empty heap (as t is forced to be an integer).
     if (this->list == nullptr)
@@ -291,7 +303,7 @@ T MergeableHeap<T>::Minimum()
 }
 
 template <typename T>
-List<T>* MergeableHeap<T>::GetOneBeforeNode(const T value)
+List<T>* MergeableHeap<T>::GetOneBeforeNode(const T value) const
 {
     List<T> *prev{nullptr};
     auto *current{this->list};
@@ -346,15 +358,15 @@ T MergeableHeap<T>::ExctractMin()
 }
 
 template <typename T>
-List<T>* Merge(List<T> *head1,List<T> *head2)
+List<T>* MergeableHeap<T>::Merge(List<T> *head1, List<T> *head2)
 {
     List<T> *newHead{nullptr};
 
-    // Return the other list if one of them is NULL
-    if(head1==NULL)
+    // Returns the other list if one of them is null.
+    if(head1 == nullptr)
         return head2;
     else
-        if(head2 ==NULL)
+        if(head2 == nullptr)
             return head1;
 
     // Goes over the lists and find where to insert the next node of the list.
@@ -373,15 +385,43 @@ List<T>* Merge(List<T> *head1,List<T> *head2)
 }
 
 template <typename T>
-void MergeableHeap<T>::MergeUnSortedLists(List<T> *to, List<T> *from)
+void MergeableHeap<T>::MergeUnSortedLists(List<T> *to, List<T> *from, bool remove_duplications)
 {
+    // A set that saves values with O(1) and can be accessed with O(1)
+    // to save the node's values to remove duplications.
+    std::unordered_set<T> saved_values{};
+
     // Find the last node of the list to merge into.
     while(to->GetNext() != nullptr)
     {
+        // Add the node's value.
+        if (remove_duplications)
+            saved_values.insert(to->GetValue());
+
         to = to->GetNext();
     }
 
     to->SetNext(from);
+
+    List<T> *tmp{nullptr};
+
+    if (remove_duplications)
+    {
+        while (to->GetNext() != nullptr)
+        {
+            // If the value is duplicated remove its node.
+            if (saved_values.find(to->GetNext()->GetValue()) != saved_values.end())
+            {
+                tmp = to->GetNext();
+                to->SetNext(to->GetNext()->GetNext());
+                delete tmp;
+            }
+
+            // Continue to the next node.
+            to = to->GetNext();
+        }
+
+    }
 }
 
 template <typename T>
@@ -395,9 +435,14 @@ void MergeableHeap<T>::Union(MergeableHeap<T> &&other)
         break;
     }
     case ListType::unsorted:
-    case ListType::disjoints:
     {
         MergeUnSortedLists(this->list, other.list);
+        break;
+    }
+    case ListType::disjoints:
+    {
+        // Removes the duplicated values between the two lists.
+        MergeUnSortedLists(this->list, other.list, true);
         break;
     }
     default:
