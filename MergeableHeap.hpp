@@ -65,9 +65,8 @@ public:
      * @brief Union the two heaps.
      *
      * @param other The other heap to be merged
-     * @return bool true if the union was successful, false otherwise.
      */
-    bool Union(const MergeableHeap<T> &&other);
+    void Union(MergeableHeap<T> &&other);
 
 private:
     /**
@@ -117,22 +116,12 @@ private:
     List<T>* GetOneBeforeNode(const T value);
 
     /**
-     * @brief Merge the given sorted lists into the first list.
-     *
-     * @param to The list to merge into.
-     * @param from The list to merge.
-     * @return True if the merge was successful, false otherwise.
-     */
-    bool MergeSortedLists(List<T> *to, List<T> *from);
-
-    /**
      * @brief Merge the given unsorted lists into the first list.
      *
      * @param to The list to merge into.
      * @param from The list to merge.
-     * @return True if the merge was successful, false otherwise.
      */
-    bool MergeUnSortedLists(List<T> *to, List<T> *from);
+    void MergeUnSortedLists(List<T> *to, List<T> *from);
 
 public:
     List<T> *list;
@@ -319,6 +308,11 @@ List<T>* MergeableHeap<T>::GetOneBeforeNode(const T value)
 template <typename T>
 T MergeableHeap<T>::ExctractMin()
 {
+    if (this->list == nullptr)
+    {
+        return 0;
+    }
+
     T min{Minimum()};
     switch (this->type)
     {
@@ -327,6 +321,8 @@ T MergeableHeap<T>::ExctractMin()
         auto *tmp{this->list};
         this->list = this->list->GetNext();
         delete tmp;
+
+        break;
     }
     case ListType::unsorted:
     case ListType::disjoints:
@@ -337,6 +333,8 @@ T MergeableHeap<T>::ExctractMin()
         one_before_min->SetNext(min_node->GetNext());
 
         delete min_node;
+
+        break;
     }
     default:
     {
@@ -348,13 +346,34 @@ T MergeableHeap<T>::ExctractMin()
 }
 
 template <typename T>
-bool MergeableHeap<T>::MergeSortedLists(List<T> *to, List<T> *from)
+List<T>* Merge(List<T> *head1,List<T> *head2)
 {
-    return true;
+    List<T> *newHead{nullptr};
+
+    // Return the other list if one of them is NULL
+    if(head1==NULL)
+        return head2;
+    else
+        if(head2 ==NULL)
+            return head1;
+
+    // Goes over the lists and find where to insert the next node of the list.
+    if(head1->GetValue() < head2->GetValue())
+    {
+        newHead = head1;
+        newHead->SetNext(Merge(head1->GetNext(), head2));
+    }
+    else
+    {
+        newHead = head2;
+        newHead->SetNext(Merge(head1, head2->GetNext()));
+    }
+
+    return newHead;
 }
 
 template <typename T>
-bool MergeableHeap<T>::MergeUnSortedLists(List<T> *to, List<T> *from)
+void MergeableHeap<T>::MergeUnSortedLists(List<T> *to, List<T> *from)
 {
     // Find the last node of the list to merge into.
     while(to->GetNext() != nullptr)
@@ -363,32 +382,31 @@ bool MergeableHeap<T>::MergeUnSortedLists(List<T> *to, List<T> *from)
     }
 
     to->SetNext(from);
-
-    return true;
 }
 
 template <typename T>
-bool MergeableHeap<T>::Union(const MergeableHeap<T> &&other)
+void MergeableHeap<T>::Union(MergeableHeap<T> &&other)
 {
     switch (this->type)
     {
     case ListType::sorted:
     {
-        other.list = nullptr;
+        this->list = Merge(this->list, other.list);
         break;
     }
     case ListType::unsorted:
     case ListType::disjoints:
     {
-        CHECK_RET(MergeUnSortedLists(this->list, other.list));
+        MergeUnSortedLists(this->list, other.list);
         break;
     }
     default:
-        break;
+    {
+        throw std::invalid_argument("unsupported");
+    }
     }
 
     other.list = nullptr;
-    return true;
 }
 } // namespace MNMA
 
